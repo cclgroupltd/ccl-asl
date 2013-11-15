@@ -33,7 +33,7 @@ import os.path as path
 import re
 import ccl_asldb
 
-__version__ = "0.2.1"
+__version__ = "0.3.0"
 __description__ = "Reads the ASL log files in the DiagnosticMessages folder on an iOS device and presents a timeline of battery charge as a csv file"
 __contact__ = "Alex Caithness"
 __outputtype__ = 0
@@ -81,7 +81,7 @@ def __dowork__(work_input, work_output):
                 continue
             if "com.apple.message.domain" not in record.key_value_dict:
                 continue
-            if record.key_value_dict["com.apple.message.domain"]not in ("com.apple.powermanagement.sleep", "com.apple.powermanagement.wake"):
+            if record.key_value_dict["com.apple.message.domain"].lower() not in ("com.apple.powermanagement.sleep", "com.apple.powermanagement.wake"):
                 continue
 
             # OK, we have a record we want, pull out the charge value using regular expressions (now I have two problems etc.)
