@@ -34,9 +34,11 @@ import argparse
 import os
 import os.path
 
-__version__ = "0.2.1"
+__version__ = "0.3"
 __description__ = "Parses Apple .asl log files"
 __contact__ = "acaithness@ccl-forensics.com"
+
+_FILES_HAVE_MASK = True
 
 _MAGIC = b"ASL DB\x00\x00\x00\x00\x00\x00"
 
@@ -160,6 +162,8 @@ class AslDb:
         first_record_offset, = struct.unpack(">Q", self.f.read(8))
         self.timestamp = _UNIX_EPOCH + datetime.timedelta(seconds=struct.unpack(">q", self.f.read(8))[0])
         self.string_cache_size, = struct.unpack(">I", self.f.read(4))
+        if _FILES_HAVE_MASK:
+            filter_mask = self.f.read(1)[0] # WUT??!
         self.last_record_offset, = struct.unpack(">Q", self.f.read(8))
         self.f.read(36) # should be all 0x00 - maybe worth checking?
 
@@ -169,6 +173,7 @@ class AslDb:
         next_offset = first_record_offset
 
         while next_offset != self.last_record_offset:
+            #print(next_offset)
             self.f.seek(next_offset + 6) # first 6 bytes of a record: 2 bytes of 0x00 followed by 32bit int for length
             n, = struct.unpack(">Q", self.f.read(8))
             self._record_offsets.append(n)
@@ -197,7 +202,7 @@ def record_to_tsv(record):
     # Newlines in the message field get replaced by single spaces and tabs by 4 spaces for ease of viewing
     return "\t".join((record.timestamp.isoformat(), record.host, record.sender,  
                       str(record.pid), str(record.refproc), str(record.refpid), record.facility, record.level_str, record.message.replace("\n", " ").replace("\t", "    "), 
-                      "; ".join(["{0}='{1}'".format(key, record.key_value_dict[key]) for key in record.key_value_dict])))
+                      "; ".join(["{0}='{1}'".format(key, record.key_value_dict[key]) for key in record.key_value_dict]).replace("\n", " ").replace("\t", "    ")))
 
 def main():
     # Parse arguments
